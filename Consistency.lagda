@@ -1,6 +1,6 @@
 \AgdaHide{
 \begin{code}
-module GuardedTT where
+module Consistency where
 
 open import Data.Unit
 open import Data.Empty
