@@ -11,5 +11,5 @@ module Prelude where
 
 -- Syntax of GTT and example of streams (Section 3)
   open import Prelude.Syntax public
-  open import Prelude.Streams
+  open import Prelude.Streams public
 

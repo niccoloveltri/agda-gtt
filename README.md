@@ -25,3 +25,6 @@ Structure of the code:
 - GTT/Structure.agda: Interpretation of types, contexts, terms, substitutions and definitional equalities
 - GTT/Typeformers.agda: categorical semantics of GTT
 - Soundness.agda: soundness and consistency of GTT
+
+The formalization uses Agda 2.5.4.2 and Agda standard library 0.16
+ The file Everything.agda contains the whole formalization.

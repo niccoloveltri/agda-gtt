@@ -10,7 +10,10 @@ open import Prelude
 open import Prelude.Syntax
 open import Prelude.Interpretation
 open import Presheaves
-open import GTT
+open import GTT.Structure
+open import Prelude.Interpretation
+open import GTT.InterpretSyntax
+open import GTT.DefinitionalEqualities
 
 open interpret-syntax
 

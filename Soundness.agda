@@ -1,7 +1,7 @@
 module Soundness where
 
 -- Soundness and consistency of GTT (Section 6)
-open import Prelude.Interpretation
-open import GTT.InterpretSyntax
-open import GTT.DefinitionalEqualities
-open import Consistency
+open import Prelude.Interpretation public
+open import GTT.InterpretSyntax public
+open import GTT.DefinitionalEqualities public
+open import Consistency public
