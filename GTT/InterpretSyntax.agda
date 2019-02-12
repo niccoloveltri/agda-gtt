@@ -1,5 +1,4 @@
-\AgdaHide{
-\begin{code}
+
 module GTT.InterpretSyntax where
 
 open import Data.Sum
@@ -15,16 +14,8 @@ open PSh
 open ►Obj
 open ExpObj
 open NatTrans
-\end{code}
-}
 
-Now we prove \GTT\ sound \wrt the categorical semantics.
-%define the categorical semantics.
-%For this, we use the operations defined in \Cref{sec:presheaf_sem,sec:guarded}.
-We only show the interpretation of the types whose semantics has been explicitly discussed in \Cref{sec:presheaf_sem,sec:guarded}. Since syntactic types are defined mutually with codes, the interpretation of types \F{⟦\_⟧type} has to be defined simultaneously with the interpretation of codes \F{⟦\_⟧code}, which we omit here.
-
-\AgdaHide{
-\begin{code}
+-- Interpretation of codes and types
 mutual
   ⟦_⟧code : ∀ {Δ} → Code Δ → SemCode Δ
   ⟦_⟧code (∁ A) = ∁ ⟦ A ⟧type
@@ -32,33 +23,24 @@ mutual
   ⟦ P ⊞ Q ⟧code = ⟦ P ⟧code ⊞ ⟦ Q ⟧code
   ⟦ P ⊠ Q ⟧code = ⟦ P ⟧code ⊠ ⟦ Q ⟧code
   ⟦ ▻ P ⟧code = ▸ ⟦ P ⟧code
-\end{code}
-}
 
-\begin{code}
   ⟦_⟧type : ∀ {Δ} → Ty Δ → SemTy Δ
   ⟦ A ⟶ B ⟧type = ⟦ A ⟧type ⇒ ⟦ B ⟧type
   ⟦ ▻ A ⟧type = ► ⟦ A ⟧type
   ⟦ □ A ⟧type = ■ ⟦ A ⟧type
   ⟦ μ P ⟧type = mu ⟦ P ⟧code  
-\end{code}
-
-\AgdaHide{
-\begin{code}
   ⟦ 𝟙 ⟧type = Unit
   ⟦ A ⊠ B ⟧type = ⟦ A ⟧type ⊗ ⟦ B ⟧type
   ⟦ A ⊞ B ⟧type = ⟦ A ⟧type ⊕ ⟦ B ⟧type
   ⟦ ⇡ A ⟧type = ⇑ ⟦ A ⟧type
-\end{code}
-}
 
-\AgdaHide{
-\begin{code}
+-- Interpretation of contexts
 ⟦_⟧Γ : {Δ : ClockCtx} → Ctx Δ → SemCtx Δ
 ⟦ • ⟧Γ = ∙ _
 ⟦ Γ , A ⟧Γ = (⟦ Γ ⟧Γ) ,, ⟦ A ⟧type
 ⟦ ⇡ Γ ⟧Γ = ⇑ ⟦ Γ ⟧Γ
 
+-- Interpretation of the term constructor "cons" in the ∅ clock context
 consset' : (P Q : Code ∅) → ⟦ eval Q (μ P) ⟧type → μset ⟦ P ⟧code ⟦ Q ⟧code
 consset' P (∁ x) t = ∁s t -- ∁s t
 consset' P I t = I t -- I t
@@ -66,6 +48,8 @@ consset' P (Q ⊞ Q₁) (inj₁ x) = ⊞₁ (consset' P Q x)
 consset' P (Q ⊞ Q₁) (inj₂ y) = ⊞₂ (consset' P Q₁ y)
 consset' P (Q₁ ⊠ Q₂) t = consset' P Q₁ (proj₁ t) ⊠ consset' P Q₂ (proj₂ t)
 
+-- Interpretation of the term constructor "cons" in the κ clock context
+-- and some auxiliary functions
 cons₁' : (P Q : Code κ) (i : Size) → Obj ⟦ eval Q (μ P) ⟧type i → muObj' ⟦ P ⟧code ⟦ Q ⟧code i
 cons₂' : (P Q : Code κ) (i : Size) (j : Size< (↑ i)) (t : Obj ⟦ eval Q (μ P) ⟧type i)
   → muMor' ⟦ P ⟧code ⟦ Q ⟧code i j (cons₁' P Q i t) ≡ cons₁' P Q j (Mor ⟦ eval Q (μ P) ⟧type i j t)
@@ -92,6 +76,7 @@ conspsh : (P Q : Code κ) (Γ : Ctx κ) → SemTm ⟦ Γ ⟧Γ ⟦ eval Q (μ P)
 nat-map (conspsh P Q Γ t) i γ  = cons₁' P Q i (nat-map t i γ)
 nat-com (conspsh P Q Γ t) i j γ = trans (cons₂' P Q i j (nat-map t i γ)) (cong (cons₁' P Q j) (nat-com t i j γ))
 
+-- Interpretation of the term constructor "primrec" in the ∅ clock context
 primrec-set' : (P Q : Code ∅) (A : Ty ∅)
   → ⟦ eval P (μ P ⊠ A) ⟶ A ⟧type
   → (μset ⟦ P ⟧code ⟦ Q ⟧code)
@@ -108,6 +93,8 @@ primrec-set : (P : Code ∅) (Γ : Ctx ∅) (A : Ty ∅)
   → SemTm ⟦ Γ ⟧Γ (mu ⟦ P ⟧code ⇒ ⟦ A ⟧type)
 primrec-set P Γ A t x a = t x (primrec-set' P P A (t x) a)
 
+-- Interpretation of the term constructor "primrec" in the κ clock context
+-- and some auxiliary functions
 primrec-psh'₁₁ : (P Q : Code κ) (A : Ty κ) (i : Size) (t : Obj ⟦ eval P (μ P ⊠ A) ⟶ A ⟧type i)
   → (j : Size< (↑ i)) (z : muObj' ⟦ P ⟧code ⟦ Q ⟧code j)
   → Obj ⟦ eval Q (μ P ⊠ A) ⟧type j
@@ -163,95 +150,7 @@ funcom (nat-map (primrec-psh P Γ A f) i x) j k y =
         (cong (fun (nat-map f i x) k) (primrec-psh'₁₂ P P A i (nat-map f i x) j y k))
 nat-com (primrec-psh P Γ A t) i j x = funeq (λ k z → cong₂ (λ a b → fun a k b) (nat-com t i j x) (primrec-psh'₂ P P ⟦ Γ ⟧Γ A t i j x k z))
 
-{-
-primrec-psh'₁₁ : (P Q : Code κ) (A : Type κ) (i : Size) (t : Obj ⟦ (eval P (μ P) ⊠ eval P A) ⟶ A ⟧type i)
-  → (j : Size< (↑ i)) (z : μObj' ⟦ P ⟧poly ⟦ Q ⟧poly j)
-  → Obj ⟦ eval Q (μ P) ⊠ eval Q A ⟧type j
-primrec-psh'₁₂ : (P Q : Code κ) (A : Type κ) (i : Size) (t : Obj ⟦ (eval P (μ P) ⊠ eval P A) ⟶ A ⟧type i)
-  → (j : Size< (↑ i)) (z : μObj' ⟦ P ⟧poly ⟦ Q ⟧poly j) (k : Size< (↑ j))
-  → Mor ⟦ eval Q (μ P) ⊠ eval Q A ⟧type j k (primrec-psh'₁₁ P Q A i t j z)
-    ≡
-    primrec-psh'₁₁ P Q A i t k (μMor' ⟦ P ⟧poly ⟦ Q ⟧poly j k z)
-proj₁ (primrec-psh'₁₁ P (∁ X) A i t j (∁ps z)) = z
-proj₂ (primrec-psh'₁₁ P (∁ X) A i t j (∁ps z)) = z
-primrec-psh'₁₁ P I A i t j (I z) = (z , fun t j (primrec-psh'₁₁ P P A i t j z))
-primrec-psh'₁₁ P (Q₁ ⊞ Q₂) A i t j (⊞₁ z) = (inj₁ (proj₁ (primrec-psh'₁₁ P Q₁ A i t j z)) , inj₁ (proj₂ (primrec-psh'₁₁ P Q₁ A i t j z)))
-primrec-psh'₁₁ P (Q₁ ⊞ Q₂) A i t j (⊞₂ z) = (inj₂ (proj₁ (primrec-psh'₁₁ P Q₂ A i t j z)) , inj₂ (proj₂ (primrec-psh'₁₁ P Q₂ A i t j z)))
-primrec-psh'₁₁ P (Q₁ ⊠ Q₂) A i t j (z₁ ⊠ z₂) =
-  ((proj₁ (primrec-psh'₁₁ P Q₁ A i t j z₁) , proj₁ (primrec-psh'₁₁ P Q₂ A i t j z₂)),
-   (proj₂ (primrec-psh'₁₁ P Q₁ A i t j z₁) , proj₂ (primrec-psh'₁₁ P Q₂ A i t j z₂)))
-►cone (proj₁ (primrec-psh'₁₁ P (▻P Q) A i t j (►P z₁ z₂))) [ k ] = proj₁ (primrec-psh'₁₁ P Q A i t k (z₁ [ k ]))
-►com (proj₁ (primrec-psh'₁₁ P (▻P Q) A i t j (►P z₁ z₂))) [ k ] [ l ] =
-  trans (cong proj₁ (primrec-psh'₁₂ P Q A i t k (z₁ [ k ]) l))
-        ((cong (λ q → proj₁ (primrec-psh'₁₁ P Q A i t l q)) (z₂ [ k ] [ l ])))
-►cone (proj₂ (primrec-psh'₁₁ P (▻P Q) A i t j (►P z₁ z₂))) [ k ] = proj₂ (primrec-psh'₁₁ P Q A i t k (z₁ [ k ]))
-►com (proj₂ (primrec-psh'₁₁ P (▻P Q) A i t j (►P z₁ z₂))) [ k ] [ l ] =
-  trans (cong proj₂ (primrec-psh'₁₂ P Q A i t k (z₁ [ k ]) l))
-        ((cong (λ q → proj₂ (primrec-psh'₁₁ P Q A i t l q)) (z₂ [ k ] [ l ])))
-primrec-psh'₁₂ P (∁ X) A i t j (∁ps z) k = refl
-primrec-psh'₁₂ P I A i f j (I z) k =
-  cong (λ z → (_ , z))
-       (trans (funcom f j k (primrec-psh'₁₁ P P A i f j z))
-              ((cong (fun f k) (primrec-psh'₁₂ P P A i f j z k))))
-primrec-psh'₁₂ P (Q₁ ⊞ Q₂) A i t j (⊞₁ z) k =
-  cong₂ (_,_)
-        (cong (λ z → inj₁(proj₁ z)) (primrec-psh'₁₂ P Q₁ A i t j z k))
-        (cong (λ z → inj₁(proj₂ z)) (primrec-psh'₁₂ P Q₁ A i t j z k))
-primrec-psh'₁₂ P (Q₁ ⊞ Q₂) A i t j (⊞₂ z) k =
-  cong₂ (_,_)
-        (cong (λ z → inj₂(proj₁ z)) (primrec-psh'₁₂ P Q₂ A i t j z k))
-        (cong (λ z → inj₂(proj₂ z)) (primrec-psh'₁₂ P Q₂ A i t j z k))
-primrec-psh'₁₂ P (Q₁ ⊠ Q₂) A i t j (z₁ ⊠ z₂) k =
-  cong₂ (_,_)
-        (cong₂ (_,_)
-               (cong (λ z → proj₁ z) (primrec-psh'₁₂ P Q₁ A i t j z₁ k))
-               (cong (λ z → proj₁ z) (primrec-psh'₁₂ P Q₂ A i t j z₂ k)))
-        (cong₂ (_,_)
-               (cong (λ z → proj₂ z) (primrec-psh'₁₂ P Q₁ A i t j z₁ k))
-               (cong (λ z → proj₂ z) (primrec-psh'₁₂ P Q₂ A i t j z₂ k)))
-primrec-psh'₁₂ P (▻P Q) A i t j (►P z₁ z₂) k = cong₂ (_,_) (►eq (λ {_ → refl})) (►eq (λ {_ → refl}))
-
-primrec-psh'₂ : (P Q : Code κ) (Γ : Ctx κ) (A : Type κ) (t : Tm Γ ⟦ (eval P (μ P) ⊠ eval P A) ⟶ A ⟧type)
-  → (i : Size) (j : Size< (↑ i)) (x : Obj Γ i) (k : Size< (↑ j)) (z : μObj' ⟦ P ⟧poly ⟦ Q ⟧poly k)
-  → primrec-psh'₁₁ P Q A i (nat-map t i x) k z
-    ≡
-    primrec-psh'₁₁ P Q A j (nat-map t j (Mor Γ i j x)) k z
-primrec-psh'₂ P (∁ X) Γ A t i j x k (∁ps z) = refl
-primrec-psh'₂ P I Γ A t i j x k (I z) =
-  cong (λ q → (z , q))
-       (trans (cong (λ q → fun q k (primrec-psh'₁₁ P P A i (nat-map t i x) k z)) (nat-com t i j x))
-              (cong (λ z → fun (nat-map t j (Mor Γ i j x)) k z) (primrec-psh'₂ P P Γ A t i j x k z)))
-primrec-psh'₂ P (Q₁ ⊞ Q₂) Γ A t i j x k (⊞₁ z) =
-  cong₂ (_,_)
-        (cong inj₁ (cong proj₁ (primrec-psh'₂ P Q₁ Γ A t i j x k z)))
-        (cong inj₁ (cong proj₂ (primrec-psh'₂ P Q₁ Γ A t i j x k z)))
-primrec-psh'₂ P (Q₁ ⊞ Q₂) Γ A t i j x k (⊞₂ z) =
-  cong₂ (_,_)
-        (cong inj₂ (cong proj₁ (primrec-psh'₂ P Q₂ Γ A t i j x k z)))
-        (cong inj₂ (cong proj₂ (primrec-psh'₂ P Q₂ Γ A t i j x k z)))
-primrec-psh'₂ P (Q₁ ⊠ Q₂) Γ A t i j x k (z₁ ⊠ z₂) =
-  cong₂ (_,_)
-        (cong₂ (_,_)
-               (cong proj₁ (primrec-psh'₂ P Q₁ Γ A t i j x k z₁))
-               (cong proj₁ (primrec-psh'₂ P Q₂ Γ A t i j x k z₂)))
-        (cong₂ (_,_)
-               (cong proj₂ (primrec-psh'₂ P Q₁ Γ A t i j x k z₁))
-               (cong proj₂ (primrec-psh'₂ P Q₂ Γ A t i j x k z₂)))
-primrec-psh'₂ P (▻P Q) Γ A t i j x k (►P z₁ z₂) =
-  cong₂ (_,_)
-        (►eq (λ {l → cong proj₁ (primrec-psh'₂ P Q Γ A t i j x l (z₁ [ l ]))}))
-        (►eq (λ {l → cong proj₂ (primrec-psh'₂ P Q Γ A t i j x l (z₁ [ l ]))}))
-
-primrec-psh : (P : Code κ) (Γ : Ctx κ) (A : Type κ)
-  → Tm ⟦ Γ ⟧Γ ⟦ (eval P (μ P) ⊠ eval P A) ⟶ A ⟧type
-  → Tm ⟦ Γ ⟧Γ (mu ⟦ P ⟧poly ⇒ ⟦ A ⟧type)
-fun (nat-map (primrec-psh P Γ A f) i x) j y = fun (nat-map f i x) j (primrec-psh'₁₁ P P A i (nat-map f i x) j y)
-funcom (nat-map (primrec-psh P Γ A f) i x) j k y =
-  trans (funcom (nat-map f i x) j k _)
-        (cong (fun (nat-map f i x) k) (primrec-psh'₁₂ P P A i (nat-map f i x) j y k))
-nat-com (primrec-psh P Γ A t) i j x = funeq (λ k z → cong₂ (λ a b → fun a k b) (nat-com t i j x) (primrec-psh'₂ P P ⟦ Γ ⟧Γ A t i j x k z))
--}
-
+-- Interpretation of the term constructor "μweaken"
 μweaken-help : (P Q : Code ∅) → μset ⟦ P ⟧code ⟦ Q ⟧code → (i : Size) → muObj' ⟦ weakenP P ⟧code ⟦ weakenP Q ⟧code i
 μweaken-help P (∁ X) (∁s x) i = const x
 μweaken-help P I (I x) i = rec (μweaken-help P P x i)
@@ -271,6 +170,7 @@ nat-com (primrec-psh P Γ A t) i j x = funeq (λ k z → cong₂ (λ a b → fun
 μweaken-eq P (Q₁ ⊠ Q₂) (x₁ ⊠ x₂) i j k =
   cong₂ _,_ (μweaken-eq P Q₁ x₁ i j k) (μweaken-eq P Q₂ x₂ i j k)
 
+-- Interpretation of the term constructor "weakenμ"
 weakenμ-help : (P Q : Code ∅) → (i : Size) → muObj' ⟦ weakenP P ⟧code ⟦ weakenP Q ⟧code i → μset ⟦ P ⟧code ⟦ Q ⟧code
 weakenμ-help P (∁ X) i (const x) = ∁s x
 weakenμ-help P I i (rec x) = I (weakenμ-help P P i x)
@@ -289,6 +189,7 @@ weakenμ-eq P (Q₁ ⊞ Q₂) i (in₂ x) j = cong ⊞₂ (weakenμ-eq P Q₂ i 
 weakenμ-eq P (Q₁ ⊠ Q₂) i (x₁ , x₂) j =
   cong₂ (_⊠_) (weakenμ-eq P Q₁ i x₁ j) (weakenμ-eq P Q₂ i x₂ j)
 
+-- Interpretation of substitutions and terms
 mutual
   ⟦_⟧sub : {Δ : ClockCtx} {Γ Γ' : Ctx Δ} → Sub Γ Γ' → SemSub ⟦ Γ ⟧Γ ⟦ Γ' ⟧Γ
   ⟦ ε Γ ⟧sub = sem-ε ⟦ Γ ⟧Γ
@@ -340,5 +241,4 @@ mutual
   fun (nat-map ⟦ weakenμ P ⟧tm i x) j y = weakenμ-help P P j y
   funcom (nat-map ⟦ weakenμ P ⟧tm i x) j k y = weakenμ-eq P P j y k
   nat-com ⟦ weakenμ P ⟧tm i j x = funeq (λ _ _ → refl)
-\end{code}
-}
+

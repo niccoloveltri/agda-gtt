@@ -1,4 +1,5 @@
 module Presheaves where
+-- Presheaves and operation on presheaves (Section 4.1)
   open import Presheaves.Presheaves public
   open import Presheaves.Const public
   open import Presheaves.Exp public

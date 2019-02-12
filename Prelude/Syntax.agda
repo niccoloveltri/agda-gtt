@@ -415,7 +415,7 @@ mutual
     cong-up : {Γ Γ' : Ctx ∅} {s₁ s₂ : Sub Γ Γ'} → s₁ ≈ s₂ → up s₁ ≈ up s₂
     cong-down : {Γ Γ' : Ctx ∅} {s₁ s₂ : Sub (⇡ Γ) (⇡ Γ')} → s₁ ≈ s₂ → down s₁ ≈ down s₂
 
--- -- Category and projection laws    
+-- -- Category laws    
     sub-idl : ∀ {Δ} {Γ Γ' : Ctx Δ} (s : Sub Γ Γ') → id Γ' ∘ s ≈ s
     sub-idr : ∀ {Δ} {Γ Γ' : Ctx Δ} (s : Sub Γ Γ') → s ∘ id Γ ≈ s
     sub-assoc : ∀ {Δ} {Γ₁ Γ₂ Γ₃ Γ₄ : Ctx Δ} (s₁ : Sub Γ₁ Γ₂) (s₂ : Sub Γ₂ Γ₃) (s₃ : Sub Γ₃ Γ₄)
@@ -448,3 +448,38 @@ mutual
     down-pr : {Γ Γ' : Ctx ∅} {A : Ty ∅} (s : Sub (⇡ Γ) (⇡ (Γ' , A))) → down (pr (⇡, Γ' A ∘ s)) ≈ pr (down s)
     down-idsub : (Γ : Ctx ∅) → down (id (⇡ Γ)) ≈ id Γ
     down-,s : {Γ Γ' : Ctx ∅} {A : Ty ∅} (s : Sub (⇡ Γ) (⇡ Γ')) (t : Tm (⇡ Γ) (⇡ A)) → down (,⇡ Γ' A ∘ (s , t)) ≈ (down s , down t)
+
+-- Some derivable term equalities
+sub-π₁ : {Δ : ClockCtx} {Γ₁ Γ₂ : Ctx Δ} {A : Ty Δ} {B : Ty Δ} (t : Tm Γ₁ (A ⊠ B)) (s : Sub Γ₂ Γ₁)
+  → sub (π₁ t) s ∼ π₁ (sub t s)
+sub-π₁ t s =
+  trans∼ (sym∼ (⊠-β₁ (sub (π₁ t) s) (sub (π₂ t) s)))
+         (cong-π₁ (trans∼ (sym∼ (sub-[ (π₁ t) & (π₂ t) ] s)) (cong-sub (⊠-η t) refl≈)))
+
+sub-π₂ : {Δ : ClockCtx} {Γ₁ Γ₂ : Ctx Δ} {A : Ty Δ} {B : Ty Δ} (t : Tm Γ₁ (A ⊠ B)) (s : Sub Γ₂ Γ₁)
+  → sub (π₂ t) s ∼ π₂ (sub t s)
+sub-π₂ t s =
+  trans∼ (sym∼ (⊠-β₂ (sub (π₁ t) s) (sub (π₂ t) s)))
+         (cong-π₂ (trans∼ (sym∼ (sub-[ (π₁ t) & (π₂ t) ] s)) (cong-sub (⊠-η t) refl≈)))
+
+sub-app : {Δ : ClockCtx} {Γ₁ Γ₂ : Ctx Δ} {A : Ty Δ} {B : Ty Δ} (t : Tm Γ₁ (A ⟶ B)) (s : Sub Γ₂ Γ₁)
+  → sub (app t) (upA A s) ∼ app (sub t s)
+sub-app t s =
+  trans∼ (sym∼ (λ-β _))
+         (trans∼ (cong-app (sym∼ (sub-lambda (app t) s)))
+                 (cong-app (cong-sub (λ-η t) refl≈)))
+
+sub-unbox : {Γ₁ Γ₂ : Ctx ∅} {A : Ty κ} (t : Tm Γ₁ (□ A)) (s : Sub Γ₂ Γ₁)
+  → sub (unbox t) (up s) ∼ unbox (sub t s)
+sub-unbox t s =
+  trans∼ (sym∼ (□-β (sub (unbox t) (up s))))
+         (cong-unbox (trans∼ (sym∼ (sub-box (unbox t) s)) (cong-sub (□-η t) refl≈)))
+
+sub-down : {Γ₁ Γ₂ : Ctx ∅} {A : Ty ∅} (t : Tm (⇡ Γ₁) (⇡ A)) (s : Sub Γ₂ Γ₁)
+  → sub (down t) s ∼ down(sub t (up s))
+sub-down t s =
+  trans∼ (sym∼ (up-β (sub (down t) s)))
+         (cong-down (trans∼ (sym∼ (sub-up (down t) s)) (cong-sub (up-η t) refl≈)))
+
+sub-tt : {Γ₁ Γ₂ : Ctx ∅} (s : Sub Γ₂ Γ₁) → sub tt s ∼ tt
+sub-tt s = 𝟙-η (sub tt s)

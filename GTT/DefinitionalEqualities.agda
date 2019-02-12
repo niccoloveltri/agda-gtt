@@ -1,5 +1,4 @@
-\AgdaHide{
-\begin{code}
+
 module GTT.DefinitionalEqualities where
 
 open import Data.Product
@@ -17,11 +16,8 @@ open ■
 open ►Obj
 open ExpObj
 open NatTrans
-\end{code}
-}
 
-\begin{code}
-
+-- Interpretation of beta and eta rules
 sem-λ-β : {Δ : ClockCtx} {Γ : Ctx Δ} {A B : Ty Δ} (t : Tm (Γ , A) B) → def-eq _ _ ⟦ app (lambda t) ⟧tm ⟦ t ⟧tm
 sem-λ-β {∅} {Γ} {A} {B} t x = refl
 sem-λ-β {κ} {Γ} {A} {B} t i x =
@@ -75,137 +71,6 @@ sem-up-β t x = refl
 sem-up-η : {Γ : Ctx ∅} {A : Ty ∅} (t : Tm (⇡ Γ) (⇡ A)) → def-eq ⟦ ⇡ Γ ⟧Γ ⟦ ⇡ A ⟧type ⟦ up (down t) ⟧tm ⟦ t ⟧tm
 sem-up-η t = nat-com ⟦ t ⟧tm ∞
 
-sem-next-id : {Γ : Ctx κ} {A : Ty κ} (t : Tm Γ (▻ A)) → def-eq ⟦ Γ ⟧Γ ⟦ ▻ A ⟧type ⟦ next (idmap A) ⊛ t ⟧tm ⟦ t ⟧tm
-sem-next-id t i x = ►eq (λ {_ → refl})
-
-sem-next-⊛ : {Γ : Ctx κ} {A B : Ty κ} (f : Tm Γ (A ⟶ B)) (t : Tm Γ A) → def-eq ⟦ Γ ⟧Γ ⟦ ▻ B ⟧type ⟦ next f ⊛ next t ⟧tm ⟦ next (f $ t) ⟧tm
-sem-next-⊛ f t i x = ►eq (λ {_ → refl})
-
-sem-next-comp : {Γ : Ctx κ} {A B C : Ty κ} (g : Tm Γ (▻ (B ⟶ C))) (f : Tm Γ (▻ (A ⟶ B))) (t : Tm Γ (▻ A))
-  → def-eq ⟦ Γ ⟧Γ ⟦ ▻ C ⟧type ⟦ ((next compmap ⊛ g) ⊛ f) ⊛ t  ⟧tm ⟦ g ⊛ (f ⊛ t) ⟧tm
-sem-next-comp g f t i x = ►eq (λ {_ → refl})
-
-sem-next-λ : {Γ : Ctx κ} {A B : Ty κ} (f : Tm Γ (▻ (A ⟶ B))) (t : Tm Γ A)
-  → def-eq ⟦ Γ ⟧Γ ⟦ ▻ B ⟧type ⟦ f ⊛ next t ⟧tm ⟦ next (lambda ((var _ _) $ (wk t))) ⊛ f ⟧tm
-sem-next-λ {Γ} f t i x = ►eq (λ { j → cong (λ z → fun (►cone (nat-map ⟦ f ⟧tm i x) [ j ]) j (nat-map ⟦ t ⟧tm j z)) (sym (MorId ⟦ Γ ⟧Γ))})
-
-sem-dfix-eq : (Γ : SemCtx κ) (A : SemTy κ) (f : SemTm Γ (► A ⇒ A))
-  → def-eq {κ} Γ (► A) (sem-dfix Γ A f) (sem-next Γ A (sem-fix Γ A f))
-sem-dfix-eq Γ A f i γ = ►eq (λ {j → cong (λ a → fun a j (sem-dfix₁ A j a)) (nat-com f i j γ)})
-
-sem-dfix-f : {Γ : Ctx κ} {A : Ty κ} (f : Tm Γ (▻ A ⟶ A))
-  → def-eq ⟦ Γ ⟧Γ ⟦ ▻ A ⟧type
-           ⟦ dfix f ⟧tm
-           ⟦ next (f $ dfix f) ⟧tm
-sem-dfix-f f = sem-dfix-eq _ _ ⟦ f ⟧tm
-
---fix-eq : (Γ : SemCtx κ) (A : SemTy κ) (f : SemTm Γ (► A ⇒ A))
---  → def-eq Γ A
---           (sem-fix Γ A f)
---           (sem-app-map Γ (► A) A f (sem-next Γ A (sem-fix Γ A f)))
---fix-eq Γ A f i x = cong (fun (nat-map f i x) i) (dfix-eq Γ A f i x)
-
---sem-fix-f : {Γ : Ctx κ} {A : Ty κ} (f : Tm Γ (▻ A ⟶ A))
---  → def-eq ⟦ Γ ⟧Γ ⟦ A ⟧type
---           ⟦ fix f ⟧tm
---           ⟦ f $ (next (fix f)) ⟧tm
---sem-fix-f f = fix-eq _ _ ⟦ f ⟧tm
-
-sem-dfix-un : (Γ : SemCtx κ) (A : SemTy κ) (f : SemTm Γ (► A ⇒ A)) (u : SemTm Γ (► A)) (i : Size) (x : Obj Γ i)
-  → def-eq Γ (► A) (sem-next Γ A (sem-app-map Γ (► A) A f u)) u
-  → sem-dfix₁ A i (nat-map f i x) ≡ nat-map u i x
-sem-dfix-un Γ A z₁ z₂ i x r = 
-  let f = nat-map z₁ in
-  let p = nat-com z₁ in
-  let u = nat-map z₂ in
-  let q = nat-com z₂ in
-  ►eq'
-  (funext (λ {[ j ] →
-    begin
-      fun (f i x) j (sem-dfix₁ A j (f i x))
-     ≡⟨ cong (λ z → fun z j (sem-dfix₁ A j z)) (p i j x) ⟩
-      fun (f j (Mor Γ i j x)) j (sem-dfix₁ A j (f j (Mor Γ i j x)))
-    ≡⟨ cong (fun (f j (Mor Γ i j x)) j) (sem-dfix-un Γ A z₁ z₂ j (Mor Γ i j x) r) ⟩
-      fun (f j (Mor Γ i j x)) j (u j (Mor Γ i j x))
-   ≡⟨ cong (λ a → ►cone a [ j ]) (r i x) ⟩
-      ►cone (u i x) [ j ]
-    ∎ }))
-{-    
-    begin
-      fun (f i x) j (sem-dfix₁ A j (f i x))
-    ≡⟨ cong (λ z → fun z j (sem-dfix₁ A j z)) (p i j x) ⟩
-      fun (f j (Mor Γ i j x)) j (sem-dfix₁ A j (f j (Mor Γ i j x)))
-    ≡⟨ cong (fun (f j (Mor Γ i j x)) j) (sem-dfix-un Γ A z₁ z₂ j (Mor Γ i j x) r) ⟩
-      fun (f j (Mor Γ i j x)) j (nat-map (sem-next Γ A z₂) j (Mor Γ i j x))
-    ≡⟨ r j (Mor Γ i j x) ⟩
-      u j (Mor Γ i j x)
-    ∎
-    }))
--}
-
-sem-dfix-u : {Γ : Ctx κ} {A : Ty κ} (f : Tm Γ (▻ A ⟶ A)) (u : Tm Γ (▻ A))
-  → def-eq ⟦ Γ ⟧Γ ⟦ ▻ A ⟧type
-           ⟦ next (f $ u) ⟧tm
-           ⟦ u ⟧tm
-  → def-eq ⟦ Γ ⟧Γ ⟦ ▻ A ⟧type
-           ⟦ dfix f ⟧tm
-           ⟦ u ⟧tm
-sem-dfix-u f u p i x = sem-dfix-un _ _ ⟦ f ⟧tm ⟦ u ⟧tm i x p
-
---fix-un : (Γ : SemCtx κ) (A : SemTy κ) (f : SemTm Γ (► A ⇒ A)) (u : SemTm Γ A)
---  → def-eq Γ A (sem-app-map Γ (► A) A f (sem-next Γ A u)) u
---  → def-eq Γ A (sem-fix Γ A f) u
---fix-un Γ A f u p i x =
---  begin
---    nat-map (sem-fix Γ A f) i x
---  ≡⟨ cong (λ z → fun (nat-map f i x) i z) (sem-dfix-un Γ A f u i x p) ⟩
---    nat-map (sem-app-map Γ (► A) A f (sem-next Γ A u)) i x
---  ≡⟨ p i x ⟩
---    nat-map u i x
---  ∎
-
-
---sem-fix-u : {Γ : Ctx κ} {A : Ty κ} (f : Tm Γ (▻ A ⟶ A)) (u : Tm Γ A)
---  → def-eq ⟦ Γ ⟧Γ ⟦ A ⟧type
---           ⟦ f $ (next u) ⟧tm
---           ⟦ u ⟧tm
---  → def-eq ⟦ Γ ⟧Γ ⟦ A ⟧type
---           ⟦ fix f ⟧tm
---           ⟦ u ⟧tm
---sem-fix-u f u p = fix-un _ _ ⟦ f ⟧tm ⟦ u ⟧tm p
-
-sem-sub-idl : {Δ : ClockCtx} {Γ Γ' : Ctx Δ} (s : Sub Γ Γ') → subst-eq _ _ ⟦ id Γ' ∘ s ⟧sub ⟦ s ⟧sub
-sem-sub-idl {∅} s x = refl
-sem-sub-idl {κ} s i x = refl
-
-sem-sub-idr : {Δ : ClockCtx} {Γ Γ' : Ctx Δ} (s : Sub Γ Γ') → subst-eq _ _ ⟦ s ∘ id Γ ⟧sub ⟦ s ⟧sub
-sem-sub-idr {∅} s x = refl
-sem-sub-idr {κ} s i x = refl
-
-sem-sub-assoc : {Δ : ClockCtx} {Γ₁ Γ₂ Γ₃ Γ₄ : Ctx Δ} (s₁ : Sub Γ₁ Γ₂) (s₂ : Sub Γ₂ Γ₃) (s₃ : Sub Γ₃ Γ₄)
-  → subst-eq _ _ ⟦ s₃ ∘ (s₂ ∘ s₁) ⟧sub ⟦ (s₃ ∘ s₂) ∘ s₁ ⟧sub
-sem-sub-assoc {∅} s₁ s₂ s₃ x = refl
-sem-sub-assoc {κ} s₁ s₂ s₃ i x = refl
-
-sem-sub-π₁β : {Δ : ClockCtx} {Γ Γ' : Ctx Δ} {A : Ty Δ} {t : Tm Γ A} (s : Sub Γ Γ')
-  → subst-eq _ _ ⟦ pr (s , t) ⟧sub ⟦ s ⟧sub
-sem-sub-π₁β {∅} s x = refl
-sem-sub-π₁β {κ} s i x = refl
-
-sem-sub-εη : {Δ : ClockCtx} {Γ : Ctx Δ} (s : Sub Γ •) → subst-eq _ _ ⟦ s ⟧sub ⟦ ε Γ ⟧sub
-sem-sub-εη {∅} s x = refl
-sem-sub-εη {κ} s i x = refl
-
-sem-sub-,o : {Δ : ClockCtx} {Γ₁ Γ₂ Γ₃ : Ctx Δ} {A : Ty Δ} {t : Tm Γ₂ A} (s₁ : Sub Γ₁ Γ₂) (s₂ : Sub Γ₂ Γ₃)
-  → subst-eq _ _ ⟦ (s₂ , t) ∘ s₁ ⟧sub ⟦ (s₂ ∘ s₁) , sub t s₁ ⟧sub
-sem-sub-,o {∅} s₁ s₂ x = refl
-sem-sub-,o {κ} s₁ s₂ i x = refl
-
-sem-sub-η : {Δ : ClockCtx} {Γ : Ctx Δ} {A : Ty Δ} (s : Sub Γ (Γ , A))
-  → subst-eq _ _ ⟦ pr s , sub (var Γ A) s ⟧sub ⟦ s ⟧sub
-sem-sub-η {∅} s x = refl
-sem-sub-η {κ} s i x = refl
-
 sem-primrec-set : (P Q : Code ∅) (Γ : Ctx ∅) (A : Ty ∅)
   → (t : Tm Γ (eval P (μ P ⊠ A) ⟶ A))
   → (x : ⟦ Γ ⟧Γ) (a : ⟦ eval Q (μ P) ⟧type)
@@ -241,55 +106,62 @@ sem-primrec-psh P (▻ Q) Γ A t i x j z =
                     (cong (λ y → fun y k (►cone z [ k ])) (trans (nat-com ⟦ Pmap Q (pairmap (idmap (μ P)) (primrec P t)) ⟧tm i k x)
                                                                  (cong (nat-map ⟦ Pmap Q (pairmap (idmap (μ P)) (primrec P t)) ⟧tm k) (MorComp ⟦ Γ ⟧Γ)))) })
 
-{-
-sem-primrec-set : (P Q : Code ∅) (Γ : Ctx ∅) (A : Ty ∅)
-  → (t : Tm Γ ((eval P (μ P) ⊠ eval P A) ⟶ A))
-  → (x : ⟦ Γ ⟧Γ) (a : ⟦ eval Q (μ P) ⟧type)
-  → primrec-set' P Q A (⟦ t ⟧tm x) (consset' P Q a) ≡ (a , ⟦ Pmap Q (primrec P t) ⟧tm x a) -- (a , ⟦ Pmap Q (primrec P t) ⟧tm x a)
-sem-primrec-set P (∁ X) Γ A t x a = refl
-sem-primrec-set P I Γ A t x a = refl
-sem-primrec-set P (Q ⊞ R) Γ A t x (inj₁ a) =
-  cong₂ _,_ (cong (inj₁ ∘ proj₁) (sem-primrec-set P Q Γ A t x a))
-            (cong (inj₁ ∘ proj₂) (sem-primrec-set P Q Γ A t x a))
-sem-primrec-set P (Q ⊞ R) Γ A t x (inj₂ a) =
-  cong₂ _,_ (cong (inj₂ ∘ proj₁) (sem-primrec-set P R Γ A t x a))
-            (cong (inj₂ ∘ proj₂) (sem-primrec-set P R Γ A t x a))
-sem-primrec-set P (Q ⊠ R) Γ A t x (a₁ , a₂) =
-  cong₂ _,_ (cong₂ _,_ (cong proj₁ (sem-primrec-set P Q Γ A t x a₁))
-                       (cong proj₁ (sem-primrec-set P R Γ A t x a₂)))
-            (cong₂ _,_ (cong proj₂ (sem-primrec-set P Q Γ A t x a₁))
-                       (cong proj₂ (sem-primrec-set P R Γ A t x a₂)))
+-- Interpretation of applicative functor equalities for ▻
+sem-next-id : {Γ : Ctx κ} {A : Ty κ} (t : Tm Γ (▻ A)) → def-eq ⟦ Γ ⟧Γ ⟦ ▻ A ⟧type ⟦ next (idmap A) ⊛ t ⟧tm ⟦ t ⟧tm
+sem-next-id t i x = ►eq (λ {_ → refl})
 
-sem-primrec-psh : (P Q : Code κ) (Γ : Ctx κ) (A : Ty κ)
-  → (t : Tm Γ ((eval P (μ P) ⊠ eval P A) ⟶ A))
-  → (i : Size) (x : Obj ⟦ Γ ⟧Γ i) (j : Size< (↑ i)) (a : Obj ⟦ eval Q (μ P) ⟧type j)
-  → primrec-psh'₁₁ P Q A i (nat-map ⟦ t ⟧tm i x) j (cons₁' P Q j a) ≡ (a , fun(nat-map ⟦ Pmap Q (primrec P t) ⟧tm i x) j a)
-sem-primrec-psh P (∁ X) Γ A t i x j a = refl
-sem-primrec-psh P I Γ A t i x j a = refl
-sem-primrec-psh P (Q ⊞ R) Γ A t i x j (inj₁ a) =
-  cong₂ _,_ (cong (inj₁ ∘ proj₁) (sem-primrec-psh P Q Γ A t i x j a))
-            (trans (cong (inj₁ ∘ proj₂) (sem-primrec-psh P Q Γ A t i x j a))
-                   (cong (λ z → inj₁ (fun z j a)) (nat-com ⟦ Pmap Q (primrec P t) ⟧tm i j x)))
-sem-primrec-psh P (Q ⊞ R) Γ A t i x j (inj₂ a) =
-  cong₂ _,_ (cong (inj₂ ∘ proj₁) (sem-primrec-psh P R Γ A t i x j a))
-            (trans (cong (inj₂ ∘ proj₂) (sem-primrec-psh P R Γ A t i x j a))
-                   (cong (λ z → inj₂ (fun z j a)) (nat-com ⟦ Pmap R (primrec P t) ⟧tm i j x)))
-sem-primrec-psh P (Q ⊠ R) Γ A t i x j (a₁ , a₂) =
-  cong₂ _,_ (cong₂ _,_ (cong proj₁ (sem-primrec-psh P Q Γ A t i x j a₁))
-                       (cong proj₁ (sem-primrec-psh P R Γ A t i x j a₂)))
-            (cong₂ _,_ (trans (cong proj₂ (sem-primrec-psh P Q Γ A t i x j a₁))
-                              (cong (λ z → fun z j a₁) (nat-com ⟦ Pmap Q (primrec P t) ⟧tm i j x)))
-                       (trans (cong proj₂ (sem-primrec-psh P R Γ A t i x j a₂))
-                              (cong (λ z → fun z j a₂) (nat-com ⟦ Pmap R (primrec P t) ⟧tm i j x))))
-sem-primrec-psh P (▻P Q) Γ A t i x j z =
-  cong₂ _,_
-        (►eq (λ {k → cong proj₁ (sem-primrec-psh P Q Γ A t i x k (►cone z [ k ]))}))
-        (►eq (λ {k → trans (cong proj₂ (sem-primrec-psh P Q Γ A t i x k (►cone z [ k ])))
-                           (cong (λ y → fun y k (►cone z [ k ]))
-                                 (trans (nat-com ⟦ Pmap Q (primrec P t) ⟧tm i k x)
-                                        (cong (nat-map ⟦ Pmap Q (primrec P t) ⟧tm k) (MorComp ⟦ Γ ⟧Γ))))}))
--}
+sem-next-⊛ : {Γ : Ctx κ} {A B : Ty κ} (f : Tm Γ (A ⟶ B)) (t : Tm Γ A) → def-eq ⟦ Γ ⟧Γ ⟦ ▻ B ⟧type ⟦ next f ⊛ next t ⟧tm ⟦ next (f $ t) ⟧tm
+sem-next-⊛ f t i x = ►eq (λ {_ → refl})
 
+sem-next-comp : {Γ : Ctx κ} {A B C : Ty κ} (g : Tm Γ (▻ (B ⟶ C))) (f : Tm Γ (▻ (A ⟶ B))) (t : Tm Γ (▻ A))
+  → def-eq ⟦ Γ ⟧Γ ⟦ ▻ C ⟧type ⟦ ((next compmap ⊛ g) ⊛ f) ⊛ t  ⟧tm ⟦ g ⊛ (f ⊛ t) ⟧tm
+sem-next-comp g f t i x = ►eq (λ {_ → refl})
+
+sem-next-λ : {Γ : Ctx κ} {A B : Ty κ} (f : Tm Γ (▻ (A ⟶ B))) (t : Tm Γ A)
+  → def-eq ⟦ Γ ⟧Γ ⟦ ▻ B ⟧type ⟦ f ⊛ next t ⟧tm ⟦ next (lambda ((var _ _) $ (wk t))) ⊛ f ⟧tm
+sem-next-λ {Γ} f t i x = ►eq (λ { j → cong (λ z → fun (►cone (nat-map ⟦ f ⟧tm i x) [ j ]) j (nat-map ⟦ t ⟧tm j z)) (sym (MorId ⟦ Γ ⟧Γ))})
+
+-- Interpretation of fixpoint equalities
+sem-dfix-eq : (Γ : SemCtx κ) (A : SemTy κ) (f : SemTm Γ (► A ⇒ A))
+  → def-eq {κ} Γ (► A) (sem-dfix Γ A f) (sem-next Γ A (sem-fix Γ A f))
+sem-dfix-eq Γ A f i γ = ►eq (λ {j → cong (λ a → fun a j (sem-dfix₁ A j a)) (nat-com f i j γ)})
+
+sem-dfix-f : {Γ : Ctx κ} {A : Ty κ} (f : Tm Γ (▻ A ⟶ A))
+  → def-eq ⟦ Γ ⟧Γ ⟦ ▻ A ⟧type
+           ⟦ dfix f ⟧tm
+           ⟦ next (f $ dfix f) ⟧tm
+sem-dfix-f f = sem-dfix-eq _ _ ⟦ f ⟧tm
+
+sem-dfix-un : (Γ : SemCtx κ) (A : SemTy κ) (f : SemTm Γ (► A ⇒ A)) (u : SemTm Γ (► A)) (i : Size) (x : Obj Γ i)
+  → def-eq Γ (► A) (sem-next Γ A (sem-app-map Γ (► A) A f u)) u
+  → sem-dfix₁ A i (nat-map f i x) ≡ nat-map u i x
+sem-dfix-un Γ A z₁ z₂ i x r = 
+  let f = nat-map z₁ in
+  let p = nat-com z₁ in
+  let u = nat-map z₂ in
+  let q = nat-com z₂ in
+  ►eq'
+  (funext (λ {[ j ] →
+    begin
+      fun (f i x) j (sem-dfix₁ A j (f i x))
+     ≡⟨ cong (λ z → fun z j (sem-dfix₁ A j z)) (p i j x) ⟩
+      fun (f j (Mor Γ i j x)) j (sem-dfix₁ A j (f j (Mor Γ i j x)))
+    ≡⟨ cong (fun (f j (Mor Γ i j x)) j) (sem-dfix-un Γ A z₁ z₂ j (Mor Γ i j x) r) ⟩
+      fun (f j (Mor Γ i j x)) j (u j (Mor Γ i j x))
+   ≡⟨ cong (λ a → ►cone a [ j ]) (r i x) ⟩
+      ►cone (u i x) [ j ]
+    ∎ }))
+
+sem-dfix-u : {Γ : Ctx κ} {A : Ty κ} (f : Tm Γ (▻ A ⟶ A)) (u : Tm Γ (▻ A))
+  → def-eq ⟦ Γ ⟧Γ ⟦ ▻ A ⟧type
+           ⟦ next (f $ u) ⟧tm
+           ⟦ u ⟧tm
+  → def-eq ⟦ Γ ⟧Γ ⟦ ▻ A ⟧type
+           ⟦ dfix f ⟧tm
+           ⟦ u ⟧tm
+sem-dfix-u f u p i x = sem-dfix-un _ _ ⟦ f ⟧tm ⟦ u ⟧tm i x p
+
+-- Interpretation of type isomorphism equalities
 μweakenμ-help : (P Q : Code ∅) (i : Size) (x : muObj' ⟦ weakenP P ⟧code ⟦ weakenP Q ⟧code i)
   → μweaken-help P Q (weakenμ-help P Q i x) i ≡ x
 μweakenμ-help P (∁ X) i (const x) = refl
@@ -306,6 +178,41 @@ weakenμweaken-help P (Q₁ ⊞ Q₂) i (⊞₁ x) = cong ⊞₁ (weakenμweaken
 weakenμweaken-help P (Q₁ ⊞ Q₂) i (⊞₂ x) = cong ⊞₂ (weakenμweaken-help P Q₂ i x)
 weakenμweaken-help P (Q₁ ⊠ Q₂) i (x₁ ⊠ x₂) = cong₂ _⊠_ (weakenμweaken-help P Q₁ i x₁) (weakenμweaken-help P Q₂ i x₂)
 
+-- Interpretation of category laws for substitutions
+sem-sub-idl : {Δ : ClockCtx} {Γ Γ' : Ctx Δ} (s : Sub Γ Γ') → subst-eq _ _ ⟦ id Γ' ∘ s ⟧sub ⟦ s ⟧sub
+sem-sub-idl {∅} s x = refl
+sem-sub-idl {κ} s i x = refl
+
+sem-sub-idr : {Δ : ClockCtx} {Γ Γ' : Ctx Δ} (s : Sub Γ Γ') → subst-eq _ _ ⟦ s ∘ id Γ ⟧sub ⟦ s ⟧sub
+sem-sub-idr {∅} s x = refl
+sem-sub-idr {κ} s i x = refl
+
+sem-sub-assoc : {Δ : ClockCtx} {Γ₁ Γ₂ Γ₃ Γ₄ : Ctx Δ} (s₁ : Sub Γ₁ Γ₂) (s₂ : Sub Γ₂ Γ₃) (s₃ : Sub Γ₃ Γ₄)
+  → subst-eq _ _ ⟦ s₃ ∘ (s₂ ∘ s₁) ⟧sub ⟦ (s₃ ∘ s₂) ∘ s₁ ⟧sub
+sem-sub-assoc {∅} s₁ s₂ s₃ x = refl
+sem-sub-assoc {κ} s₁ s₂ s₃ i x = refl
+
+sem-sub-π₁β : {Δ : ClockCtx} {Γ Γ' : Ctx Δ} {A : Ty Δ} {t : Tm Γ A} (s : Sub Γ Γ')
+  → subst-eq _ _ ⟦ pr (s , t) ⟧sub ⟦ s ⟧sub
+sem-sub-π₁β {∅} s x = refl
+sem-sub-π₁β {κ} s i x = refl
+
+sem-sub-εη : {Δ : ClockCtx} {Γ : Ctx Δ} (s : Sub Γ •) → subst-eq _ _ ⟦ s ⟧sub ⟦ ε Γ ⟧sub
+sem-sub-εη {∅} s x = refl
+sem-sub-εη {κ} s i x = refl
+
+sem-sub-,o : {Δ : ClockCtx} {Γ₁ Γ₂ Γ₃ : Ctx Δ} {A : Ty Δ} {t : Tm Γ₂ A} (s₁ : Sub Γ₁ Γ₂) (s₂ : Sub Γ₂ Γ₃)
+  → subst-eq _ _ ⟦ (s₂ , t) ∘ s₁ ⟧sub ⟦ (s₂ ∘ s₁) , sub t s₁ ⟧sub
+sem-sub-,o {∅} s₁ s₂ x = refl
+sem-sub-,o {κ} s₁ s₂ i x = refl
+
+sem-sub-η : {Δ : ClockCtx} {Γ : Ctx Δ} {A : Ty Δ} (s : Sub Γ (Γ , A))
+  → subst-eq _ _ ⟦ pr s , sub (var Γ A) s ⟧sub ⟦ s ⟧sub
+sem-sub-η {∅} s x = refl
+sem-sub-η {κ} s i x = refl
+
+
+-- Interpretation of definitional equalities on terms and substitutions
 mutual
   ⟦_⟧tm-eq : {Δ : ClockCtx} {Γ : Ctx Δ} {A : Ty Δ} {t₁ t₂ : Tm Γ A} → t₁ ∼ t₂ → def-eq ⟦ Γ ⟧Γ ⟦ A ⟧type ⟦ t₁ ⟧tm ⟦ t₂ ⟧tm
   ⟦_⟧tm-eq {∅} refl∼ x = refl
@@ -469,4 +376,4 @@ mutual
   ⟦ downup s ⟧sub-eq i = refl
   ⟦ cong-up p ⟧sub-eq i x = ⟦ p ⟧sub-eq x
   ⟦ cong-down p ⟧sub-eq x = ⟦ p ⟧sub-eq ∞ x 
-\end{code}
+
