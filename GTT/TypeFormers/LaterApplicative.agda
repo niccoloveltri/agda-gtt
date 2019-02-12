@@ -1,6 +1,5 @@
-\AgdaHide{
-\begin{code}
-module GTT.TypeFormers.LaterType where
+
+module GTT.TypeFormers.LaterApplicative where
 
 open import Data.Product
 open import Prelude
@@ -13,16 +12,10 @@ open PSh
 open ►Obj
 open ExpObj
 open NatTrans
-\end{code}
-}
 
-\begin{code}
+-- Interpretation of next
 sem-next : (Γ : SemCtx κ) (A : SemTy κ) (t : SemTm Γ A) → SemTm Γ (► A)
 ►cone (nat-map (sem-next Γ A t) i x) [ j ] = nat-map t j (Mor Γ i j x)
-\end{code}
-
-\AgdaHide{
-\begin{code}
 ►com (nat-map (sem-next Γ A t) i x) [ j ] [ k ] =
   begin
     Mor A j k (nat-map t j (Mor Γ i j x))
@@ -32,11 +25,8 @@ sem-next : (Γ : SemCtx κ) (A : SemTy κ) (t : SemTm Γ A) → SemTm Γ (► A)
     nat-map t k (Mor Γ i k x)
   ∎
 nat-com (sem-next Γ A t) i j x = ►eq (λ { j → cong (nat-map t j) (MorComp Γ) })
-\end{code}
-}
 
-\AgdaHide{
-\begin{code}
+-- Interpretation of ⊛
 fmap : (Γ : SemCtx κ) (A B : SemTy κ) 
           → (f : SemTm Γ (► (A ⇒ B))) (t : SemTm Γ (► A))
           → SemTm Γ (► B)
@@ -59,5 +49,4 @@ nat-com (fmap Γ A B f t) i j x =
   ►eq (λ {k → cong₂ (λ a b → fun (►cone a [ k ]) k (►cone b [ k ]))
                     (nat-com f i j x)
                     (nat-com t i j x)})
-\end{code}
-}
+

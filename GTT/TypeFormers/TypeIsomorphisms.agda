@@ -1,29 +1,28 @@
-\AgdaHide{
-\begin{code}
+
 module GTT.TypeFormers.TypeIsomorphisms where
 
 open import Data.Product
 open import Data.Sum
 open import Prelude
 open import GTT.Structure
-open import GTT.TypeFormers.ClockQuantification public
+open import GTT.TypeFormers.Box public
 open import GTT.TypeFormers.Force public
 open import GTT.TypeFormers.FunctionType public
 open import GTT.TypeFormers.Later public
-open import GTT.TypeFormers.LaterType public
+open import GTT.TypeFormers.LaterApplicative public
 open import GTT.TypeFormers.ProductType public
 open import GTT.TypeFormers.SumType public
 open import GTT.TypeFormers.WeakenClock public
 
 open PSh
 open ■
-\end{code}
-}
 
-\begin{code}
+
+-- Interpretation of the term constructor "□const"
 ■const-tm : (Γ : SemCtx ∅) (A : SemTy ∅) → SemTm Γ (■ (⇑ A) ⇒ A)
 ■const-tm Γ A γ x = ■cone x ∞
 
+-- Interpretation of the term constructor "□sum"
 module _ (Γ : SemCtx ∅) (A : SemTy κ) (B : SemTy κ) where
   sum-lem₁ : (t : ■ (A ⊕ B)) (x : Obj A ∞)
     → ■cone t ∞ ≡ inj₁ x
@@ -57,4 +56,3 @@ module _ (Γ : SemCtx ∅) (A : SemTy κ) (B : SemTy κ) where
   ■sum-tm γ record { ■cone = tcone ; ■com = tcom } with tcone ∞ | inspect tcone ∞
   ... | inj₁ x | [ eq ] = inj₁ (proj₁ (sum-lem₁ (record { ■cone = tcone ; ■com = tcom }) x eq))
   ... | inj₂ y | [ eq ] = inj₂ (proj₁ (sum-lem₂ (record { ■cone = tcone ; ■com = tcom }) y eq))
-\end{code}
