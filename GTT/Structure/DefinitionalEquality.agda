@@ -1,5 +1,4 @@
-\AgdaHide{
-\begin{code}
+
 module GTT.Structure.DefinitionalEquality where
 
 open import Data.Product
@@ -12,20 +11,14 @@ open import GTT.Structure.Subst
 
 open PSh
 open NatTrans
-\end{code}
-}
 
-Equality of semantic terms and substitutions is defined as propositional equality.
-%Since we assume both function extensionality and UIP, we can formulate this in a more convenient way.
-
-\AgdaHide{
-\begin{code}
+-- Semantic definitional equality of terms.
+-- -- Note that "def-eq" is logially equivalent to propositional
+-- -- equality, but it is easier to work with.
 def-eq : ∀ {Δ} (Γ : SemCtx Δ) (A : SemTy Δ) (s t : SemTm Γ A) → Set
 def-eq {∅} Γ A s t = (x : Γ) → s x ≡ t x
 def-eq {κ} Γ A s t = (i : Size) (x : Obj Γ i) → nat-map s i x ≡ nat-map t i x
-\end{code}
 
-\begin{code}
 refl-def-eq : ∀ {Δ} {Γ : SemCtx Δ} {A : SemTy Δ} {t : SemTm Γ A}
   → def-eq Γ A t t
 refl-def-eq {∅} γ = refl
@@ -58,15 +51,14 @@ eq-to-def-eq-to-eq {κ} p = funext (λ _ → funext (λ _ → uip))
 def-eq-to-eq-to-def-eq : ∀ {Δ} {Γ : SemCtx Δ} {A : SemTy Δ} {s t : SemTm Γ A}
   → (p : s ≡ t) → def-eq-to-eq(eq-to-def-eq p) ≡ p
 def-eq-to-eq-to-def-eq p = uip
-\end{code}
 
-\begin{code}
+-- Semantic definitional equality of substitutions.
+-- -- Note that "subst-eq" is logially equivalent to propositional
+-- -- equality, but it is easier to work with.
 subst-eq : ∀ {Δ} (Γ Γ' : SemCtx Δ) (s t : SemSub Γ Γ') → Set
 subst-eq {∅} Γ Γ' s t = (x : Γ) → s x ≡ t x
 subst-eq {κ} Γ Γ' s t = (i : Size) (x : Obj Γ i) → nat-map s i x ≡ nat-map t i x
-\end{code}
 
-\begin{code}
 refl-subst-eq : ∀ {Δ} {Γ Γ' : SemCtx Δ} {s : SemSub Γ Γ'}
   → subst-eq Γ Γ' s s
 refl-subst-eq {∅} x = refl
@@ -101,5 +93,4 @@ eq-to-subst-eq-to-eq : ∀ {Δ} {Γ Γ' : SemCtx Δ} {s t : SemSub Γ Γ'}
   → eq-to-subst-eq(subst-eq-to-eq p) ≡ p
 eq-to-subst-eq-to-eq {∅} p = funext (λ _ → uip)
 eq-to-subst-eq-to-eq {κ} p = funext (λ _ → funext (λ _ → uip))
-\end{code}
-}
+
