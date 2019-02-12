@@ -19,7 +19,7 @@ over the preorder of sizes. Sized types are fundamentally used to
 interpret the characteristic features of guarded recursion, notably
 the fixpoint combinator.
 
-Overview
+Structure of the code:
 - Prelude.agda: preliminary functions, syntax of GTT and example of streams
 - Presheaves.agda: definition of presheaves and natural transformations, operations on presheaves
 - GTT/Structure.agda: Interpretation of types, contexts, terms, substitutions and definitional equalities
